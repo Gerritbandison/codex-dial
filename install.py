@@ -15,13 +15,10 @@ def preflight():
         raise ValueError('Run this installer as your desktop user, without sudo.')
     if sys.platform != 'linux':
         raise ValueError('This integration requires Linux.')
-    for module in ['evdev', 'Xlib', 'PIL']:
+    for module in ['evdev', 'Xlib']:
         if importlib.util.find_spec(module) is None:
             raise ValueError(f'Missing Python module {module}. Install the Fedora dependencies listed in README.md.')
-    import ctypes.util
-    if not ctypes.util.find_library('tesseract'):
-        raise ValueError('Install tesseract-libs and tesseract-langpack-eng for guarded picker selection.')
-    for program in ['wpctl', 'notify-send', 'systemctl']:
+    for program in ['wpctl', 'systemctl']:
         if shutil.which(program) is None:
             raise ValueError(f'Missing executable: {program}')
     if not os.environ.get('DISPLAY'):

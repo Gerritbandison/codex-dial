@@ -6,9 +6,10 @@ import tempfile
 BINDINGS = [
     {'command': 'composer.increaseReasoningEffort', 'key': 'Ctrl+Shift+F11'},
     {'command': 'composer.decreaseReasoningEffort', 'key': 'Ctrl+Shift+F12'},
-    {'command': 'composer.openModelPicker', 'key': 'Ctrl+Shift+F10'},
 ]
-FILES = ['picker_guard.py', 'LICENSE', 'dial_core.py', 'dial_daemon.py', 'installation.py', 'install.py', 'uninstall.py', 'README.md', 'requirements.txt']
+RETIRED_BINDING = {'command': 'composer.openModelPicker', 'key': 'Ctrl+Shift+F10'}
+
+FILES = ['LICENSE', 'dial_core.py', 'dial_daemon.py', 'installation.py', 'install.py', 'uninstall.py', 'README.md', 'requirements.txt']
 
 
 def read_bindings(path):
@@ -74,6 +75,10 @@ def install_files(source, home, codex_home):
         if not (source / name).is_file():
             raise ValueError(f'Missing package file: {name}')
     current = read_bindings(keymap)
+    original_path = target / 'keybindings.before.json'
+    original = read_bindings(original_path) if original_path.exists() else current
+    if RETIRED_BINDING not in original:
+        current = [row for row in current if row != RETIRED_BINDING]
     merged = merge_bindings(current)
     state_file = target / 'install-state.json'
     if state_file.exists() and json.loads(state_file.read_text())['keymap'] != str(keymap):
@@ -88,6 +93,7 @@ def install_files(source, home, codex_home):
         atomic_write(target / name, (source / name).read_bytes())
     atomic_write(unit, (source / 'packaging/codex-dial.service').read_bytes())
     write_json(keymap, merged)
+    (target / 'picker_guard.py').unlink(missing_ok=True)
     return target
 
 

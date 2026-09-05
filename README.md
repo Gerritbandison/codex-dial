@@ -1,6 +1,6 @@
 # Codex Dial
 
-Use a Corsair K70 CORE TKL rotary dial to browse models with **click → turn → click**, and change reasoning effort in the ChatGPT/Codex desktop app on Linux. Hold **Ctrl** to adjust volume instead.
+Use a Corsair K70 CORE TKL rotary dial to change reasoning effort in the ChatGPT/Codex desktop app on Linux. Hold **Ctrl** to adjust volume instead.
 
 Built and physically verified on Nobara KDE with a Corsair SLIPSTREAM receiver, using the app's native keyboard-command configuration. No app binary patches, firmware modifications, browser extensions, or API keys are required.
 
@@ -14,30 +14,25 @@ Leave the keyboard dial in its normal **volume mode**. Use Fn+F12 to cycle back 
 | Counterclockwise | Higher reasoning effort; favor deeper reasoning | Normal volume down |
 | Ctrl + clockwise | Volume up 2% | Volume up 2% |
 | Ctrl + counterclockwise | Volume down 2% | Volume down 2% |
-| First dial click | Open model list | Normal mute/unmute |
-| Turn while list is open | Highlight next/previous model | Normal volume |
-| Second dial click | Select the highlighted model, if the list is still detected | Normal mute/unmute |
-| Ctrl + click | Mute/unmute | Mute/unmute |
+| Dial press | Existing mute behavior | Existing mute behavior |
 
-Outside picker mode, turning the dial keeps the selected model the same. Click-to-select changes the model. Picker mode expires after 20 seconds without use and resets on typing, Escape, or loss of app focus. Reasoning changes apply to the composer's setting for subsequent messages, not a response already generating. Available levels are determined by the selected model. This does not toggle Fast mode or change service tiers. Ctrl-volume uses the default audio sink and caps volume at 100%.
+The selected model stays the same. Reasoning changes apply to the composer's setting for subsequent messages, not a response already generating. Available levels are determined by the selected model. This does not toggle Fast mode or change service tiers. Ctrl-volume uses the default audio sink and caps volume at 100%.
 
 ## Compatibility
 
 - **Tested hardware:** Corsair receiver USB ID `1b1c:2b00`, keyboard interface `/input3`.
 - **Tested desktop:** Nobara KDE, with the ChatGPT app running through XWayland.
-- **Tested app behavior:** native Codex/Work reasoning commands, including Astra High → Medium → High; physical dial and Ctrl-volume confirmed working. Picker navigation uses the app’s native model list and plain arrow keys.
+- **Tested app behavior:** native Codex/Work reasoning commands, including Astra High → Medium → High; physical dial and Ctrl-volume confirmed working.
 - **Regular ChatGPT chats:** Instant did not respond to effort shortcuts; other regular ChatGPT reasoning modes are not yet verified. Do not assume all ChatGPT surfaces support these commands.
 - **Not supported by the current focus adapter:** native Wayland app windows, browsers displaying chatgpt.com, Windows, or macOS. Unknown windows retain normal volume behavior.
 - Other Corsair USB IDs, wired/Bluetooth connections, and dial modes need separate calibration.
 
-Picker selection is experimental and currently requires an idle Work composer with an empty draft. The app may disable or filter its model-list shortcut during generation or while text is entered. If the list is not detected, the listener refuses to confirm.
-
-Requires Python 3.10+, systemd user services, evdev/uinput access, WirePlumber (`wpctl`), and `notify-send`.
+Requires Python 3.10+, systemd user services, evdev/uinput access, WirePlumber (`wpctl`), and X11/XWayland.
 
 ## Install on Fedora / Nobara
 
 ```bash
-sudo dnf install git python3 python3-evdev python3-xlib python3-pillow tesseract-libs tesseract-langpack-eng wireplumber libnotify
+sudo dnf install git python3 python3-evdev python3-xlib wireplumber
 git clone https://github.com/Gerritbandison/codex-dial.git
 cd codex-dial
 python3 install.py --check
@@ -71,12 +66,11 @@ The installer merges these entries into `$CODEX_HOME/keybindings.json` (default 
 | --- | --- |
 | Increase reasoning effort | Ctrl+Shift+F11 |
 | Decrease reasoning effort | Ctrl+Shift+F12 |
-| Open model picker | Ctrl+Shift+F10 |
 
 The app can cache externally edited shortcuts. After installation:
 
 1. Open **Settings → Keyboard shortcuts** and search for **reasoning**.
-2. Confirm the three bindings above (search for “model picker” for the third). If they still show Unassigned, use the edit control to assign the displayed combinations. This refreshed both bindings in the tested app build.
+2. Confirm the two bindings above. If they still show Unassigned, use the edit control to assign the displayed combinations. This refreshed both bindings in the tested app build.
 3. Alternatively, fully quit and reopen the app after active work finishes.
 4. First test Ctrl+Shift+F11/F12 directly on a reasoning-capable Codex/Work task, then test the dial.
 
@@ -122,15 +116,13 @@ The listener exclusively reads the calibrated keyboard interface and forwards in
 
 Focus matching uses the X11/XWayland window class and owning executable. Dial presses/releases are paired even when focus or modifiers change mid-gesture. Repeated events are suppressed and actions are limited to one per 120 ms. The listener waits for held keys to be released before attaching, handles input resynchronization and reconnects, and releases forwarded keys when stopping.
 
-For click confirmation, local OCR checks for a newly opened, aligned list of at least three GPT model choices, then verifies that the same list is still present before sending Enter. Focus changes or input arriving during the verification cancel confirmation. Images and recognized text stay in memory and are not stored, logged, or uploaded. An unrecognized layout fails closed; narrow windows, unusual scaling, or future app changes may require updated detection. Recognition runs only on opening and confirming, and can briefly delay input forwarding.
-
-Notifications report that an effort change was **requested**. The app's model control is the authoritative indication of the selected level.
+The app’s model control shows the selected reasoning level. After a dial change, the listener sends a hover-only event to that control to show the app’s native hint; it does not move the physical pointer, click, or press Enter. This is best effort for the standard bottom-composer layout with the sidebar open. A different layout may show only the updated effort label. No desktop notifications are generated.
 
 ## Tests
 
 ```bash
 python3 -m unittest discover -s tests -v
-python3 -m compileall -q dial_core.py dial_daemon.py picker_guard.py installation.py install.py uninstall.py
+python3 -m compileall -q dial_core.py dial_daemon.py installation.py install.py uninstall.py
 ```
 
 The automated suite covers gesture routing, modifiers, focus changes, held-key releases, throttling, shortcut conflicts, repeat installation, isolated file installation, and shortcut removal. Tests do not capture the real keyboard or modify the current user's app settings. CI runs the suite on Python 3.10, 3.12, and 3.14.
@@ -139,4 +131,8 @@ Hardware validation additionally exercised real Linux virtual-device forwarding,
 
 ## License
 
-[MIT](LICENSE) © 2026 Gerritbandison. This is an independent project, not an official OpenAI or Corsair integration.
+[MIT](LICENSE) © 2026 Gerritbandison.
+
+## Removed click experiment
+
+Click-to-select, OCR, and desktop notifications have been removed. Clicking the knob retains the keyboard’s ordinary mute behavior. Upgrading removes this package’s old Ctrl+Shift+F10 binding while preserving unrelated shortcuts.

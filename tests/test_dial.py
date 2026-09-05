@@ -4,52 +4,11 @@ from dial_core import DialRouter, is_target_window
 
 
 class DialTests(unittest.TestCase):
-    def press(self, router, code, now, **kwargs):
-        flags = {'ctrl': False, 'focused': True, **kwargs}
-        result = router.key('kbd', code, 1, now=now, **flags)
-        router.key('kbd', code, 0, now=now + .01, **flags)
-        return result
-
-    def test_click_turn_click_browses_then_selects(self):
-        r = DialRouter()
-        self.assertEqual(self.press(r, 113, 1), (False, 'picker-open'))
-        self.assertEqual(self.press(r, 115, 2), (False, 'picker-next'))
-        self.assertEqual(self.press(r, 114, 3), (False, 'picker-previous'))
-        self.assertEqual(self.press(r, 113, 4), (False, 'picker-select'))
-        self.assertEqual(self.press(r, 115, 5), (False, 'decrease'))
-
-    def test_ctrl_click_toggles_mute(self):
-        self.assertEqual(self.press(DialRouter(), 113, 1, ctrl=True), (False, 'mute'))
-
-    def test_click_outside_app_is_normal_mute(self):
-        self.assertEqual(self.press(DialRouter(), 113, 1, focused=False), (True, None))
-
-    def test_escape_and_typing_cancel_picker_mode(self):
-        for key in [1, 30, 15]:
-            with self.subTest(key=key):
-                r = DialRouter()
-                self.press(r, 113, 1)
-                self.assertEqual(self.press(r, key, 2), (True, None))
-                self.assertEqual(self.press(r, 113, 3), (False, 'picker-open'))
-
-    def test_focus_loss_and_mouse_interaction_cancel_picker(self):
-        r = DialRouter()
-        self.press(r, 113, 1)
-        r.cancel_picker()
-        self.assertEqual(self.press(r, 113, 2), (False, 'picker-open'))
-        r.context(focused=False, now=3)
-        self.assertEqual(self.press(r, 113, 4), (False, 'picker-open'))
-
-    def test_picker_mode_expires_and_reopens_instead_of_selecting(self):
-        r = DialRouter()
-        self.press(r, 113, 1)
-        self.assertEqual(self.press(r, 113, 40), (False, 'picker-open'))
-
-    def test_ctrl_volume_preserves_picker_mode(self):
-        r = DialRouter()
-        self.press(r, 113, 1)
-        self.assertEqual(self.press(r, 115, 2, ctrl=True), (False, 'volume-up'))
-        self.assertEqual(self.press(r, 113, 3), (False, 'picker-select'))
+    def test_click_is_always_passed_to_normal_keyboard_behavior(self):
+        for ctrl in (False, True):
+            r = DialRouter()
+            self.assertEqual(r.key("kbd", 113, 1, ctrl=ctrl, focused=True, now=1), (True, None))
+            self.assertEqual(r.key("kbd", 113, 0, ctrl=ctrl, focused=True, now=2), (True, None))
 
     def test_ctrl_volume_uses_audio_action_and_consumes_release(self):
         r = DialRouter()

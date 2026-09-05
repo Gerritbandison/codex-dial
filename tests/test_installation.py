@@ -7,6 +7,19 @@ from installation import BINDINGS, install_files, merge_bindings, remove_owned_b
 
 
 class InstallationTests(unittest.TestCase):
+    def test_upgrade_removes_old_click_binding_and_guard(self):
+        source = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as folder:
+            home = Path(folder)
+            target = install_files(source, home, home / '.codex')
+            path = home / '.codex/keybindings.json'
+            retired = {'command': 'composer.openModelPicker', 'key': 'Ctrl+Shift+F10'}
+            path.write_text(json.dumps(BINDINGS + [retired]))
+            (target / 'picker_guard.py').write_text('retired')
+            install_files(source, home, home / '.codex')
+            self.assertNotIn(retired, json.loads(path.read_text()))
+            self.assertFalse((target / 'picker_guard.py').exists())
+
     def test_adds_bindings_without_removing_user_shortcuts(self):
         original = [{'command': 'newTask', 'key': 'Ctrl+Alt+N'}]
         self.assertEqual(merge_bindings(original), original + BINDINGS)
