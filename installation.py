@@ -6,8 +6,9 @@ import tempfile
 BINDINGS = [
     {'command': 'composer.increaseReasoningEffort', 'key': 'Ctrl+Shift+F11'},
     {'command': 'composer.decreaseReasoningEffort', 'key': 'Ctrl+Shift+F12'},
+    {'command': 'composer.openModelPicker', 'key': 'Ctrl+Shift+F10'},
 ]
-FILES = ['dial_core.py', 'dial_daemon.py', 'installation.py', 'install.py', 'uninstall.py', 'README.md', 'requirements.txt']
+FILES = ['picker_guard.py', 'LICENSE', 'dial_core.py', 'dial_daemon.py', 'installation.py', 'install.py', 'uninstall.py', 'README.md', 'requirements.txt']
 
 
 def read_bindings(path):

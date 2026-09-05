@@ -79,7 +79,7 @@ class Keyboard:
 
     def resync(self, router):
         self.held = set(self.device.active_keys())
-        wanted = self.held - {E.KEY_VOLUMEUP, E.KEY_VOLUMEDOWN}
+        wanted = self.held - {E.KEY_MUTE, E.KEY_VOLUMEUP, E.KEY_VOLUMEDOWN}
         for code in self.forwarded - wanted:
             self.output.write(E.EV_KEY, code, 0)
         for code in wanted - self.forwarded:
@@ -107,23 +107,47 @@ class Keyboard:
 class Hotkeys:
     def __init__(self, focus):
         self.focus = focus
-        self.output = UInput({E.EV_KEY: [E.KEY_LEFTCTRL, E.KEY_LEFTSHIFT, E.KEY_F11, E.KEY_F12]}, name='Codex Dial commands')
+        self.output = UInput({E.EV_KEY: [E.KEY_LEFTCTRL, E.KEY_LEFTSHIFT, E.KEY_F10, E.KEY_F11, E.KEY_F12, E.KEY_UP, E.KEY_DOWN, E.KEY_ENTER]}, name='Codex Dial commands')
         self.last_notice = 0
         self.notice = None
         self.audio = []
+        self.guard = None
+        self.on_picker_failure = lambda: None
+        self.input_changed = lambda: False
 
     def send(self, action):
         self.audio = [child for child in self.audio if child.poll() is None]
-        if action.startswith('volume-'):
+        if action.startswith('volume-') or action == 'mute':
             try:
                 self.audio.append(subprocess.Popen(
-                    ['wpctl', 'set-volume', '--limit', '1.0', '@DEFAULT_AUDIO_SINK@', '2%+' if action == 'volume-up' else '2%-'],
+                    (['wpctl', 'set-mute', '@DEFAULT_AUDIO_SINK@', 'toggle'] if action == 'mute' else
+                     ['wpctl', 'set-volume', '--limit', '1.0', '@DEFAULT_AUDIO_SINK@', '2%+' if action == 'volume-up' else '2%-']),
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
                 LOG.info('Requested %s', action)
             except OSError as error:
                 LOG.error('Cannot change volume: %s', error)
             return
         if not self.focus.active():
+            return
+        if action.startswith('picker-'):
+            try:
+                if self.guard is None:
+                    from picker_guard import PickerGuard
+                    self.guard = PickerGuard()
+                if action == 'picker-open':
+                    if not self.guard.open(lambda: self.chord([E.KEY_LEFTCTRL, E.KEY_LEFTSHIFT, E.KEY_F10])):
+                        raise RuntimeError('Model list not detected; use an idle composer with no draft text')
+                elif action == 'picker-select':
+                    if not self.guard.visible() or not self.focus.active() or self.input_changed():
+                        raise RuntimeError('Model list closed, focus changed, or input arrived; selection canceled')
+                    self.chord([E.KEY_ENTER])
+                    self.guard.selected_list = None
+                else:
+                    self.chord([E.KEY_DOWN if action == 'picker-next' else E.KEY_UP])
+                LOG.info('Requested %s', action)
+            except Exception as error:
+                self.on_picker_failure()
+                LOG.warning('Picker action canceled: %s', error)
             return
         key = E.KEY_F12 if action == 'decrease' else E.KEY_F11
         try:
@@ -151,7 +175,19 @@ class Hotkeys:
                 except OSError:
                     pass
 
+    def chord(self, keys):
+        try:
+            for key in keys:
+                self.output.write(E.EV_KEY, key, 1)
+            self.output.syn()
+        finally:
+            for key in reversed(keys):
+                self.output.write(E.EV_KEY, key, 0)
+            self.output.syn()
+
     def close(self):
+        if self.guard is not None:
+            self.guard.close()
         self.output.close()
         for child in self.audio:
             with contextlib.suppress(subprocess.TimeoutExpired):
@@ -193,6 +229,9 @@ def run(args):
         router = DialRouter()
         focus = Focus()
         hotkeys = Hotkeys(focus)
+        hotkeys.on_picker_failure = router.cancel_picker
+        hotkeys.input_changed = lambda: bool(select.select([kbd.device.fd for kbd in keyboards.values()], [], [], 0)[0])
+        pending_clicks = {}
         stopping = False
         def stop(*_):
             nonlocal stopping
@@ -202,6 +241,8 @@ def run(args):
         next_scan = 0
         try:
             while not stopping:
+                if router.picker_active:
+                    router.context(focused=focus.active(), now=time.monotonic())
                 if time.monotonic() >= next_scan:
                     for device in candidates(args.vendor, args.product, args.phys_suffix):
                         if device.path in keyboards:
@@ -242,7 +283,13 @@ def run(args):
                                 ctrl = bool(held & CTRL)
                                 forward, action = router.key(kbd.device.path, event.code, event.value,
                                     ctrl=ctrl, modified=bool(held & OTHER_MODIFIERS),
-                                    focused=event.code in (E.KEY_VOLUMEUP, E.KEY_VOLUMEDOWN) and focus.active(), now=time.monotonic())
+                                    focused=(router.picker_active or event.code in (E.KEY_MUTE, E.KEY_VOLUMEUP, E.KEY_VOLUMEDOWN)) and focus.active(), now=time.monotonic())
+                            if event.type == E.EV_KEY and event.code == E.KEY_MUTE:
+                                if event.value == 1 and action:
+                                    pending_clicks[kbd.device.path] = action
+                                    action = None
+                                elif event.value == 0:
+                                    action = pending_clicks.pop(kbd.device.path, None)
                             if forward:
                                 kbd.forward(event)
                             if action:
