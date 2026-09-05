@@ -12,7 +12,7 @@ import subprocess
 import time
 
 from evdev import InputDevice, UInput, ecodes as E, list_devices
-from Xlib import X, display, protocol
+from Xlib import X, display
 
 from dial_core import DialRouter, is_target_window
 
@@ -49,29 +49,6 @@ class Focus:
             return False
 
 
-    def effort_hint(self):
-        try:
-            if not self.active():
-                return
-            d = self.connection
-            root = d.screen().root
-            prop = root.get_full_property(d.intern_atom('_NET_ACTIVE_WINDOW'), X.AnyPropertyType)
-            window = d.create_resource_object('window', prop.value[0])
-            geometry = window.get_geometry()
-            if geometry.width < 900 or geometry.height < 500:
-                return
-            # Best-effort native hover hint for the app's standard bottom composer.
-            x = int((geometry.width + 275) / 2 + min(736, geometry.width - 323) / 2 - 110)
-            y = geometry.height - 39
-            origin = root.translate_coords(window, 0, 0)
-            event = protocol.event.MotionNotify(
-                time=X.CurrentTime, root=root, window=window, child=X.NONE,
-                root_x=origin.x + x, root_y=origin.y + y, event_x=x, event_y=y,
-                state=0, same_screen=1, detail=0)
-            window.send_event(event, event_mask=X.PointerMotionMask, propagate=False)
-            d.flush()
-        except Exception:
-            pass
 
 
 class Keyboard:
@@ -160,7 +137,6 @@ class Hotkeys:
             self.output.write(E.EV_KEY, E.KEY_LEFTCTRL, 0)
             self.output.syn()
         LOG.info('Requested %s reasoning effort', action)
-        self.focus.effort_hint()
 
     def close(self):
         self.output.close()

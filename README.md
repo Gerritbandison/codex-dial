@@ -116,7 +116,7 @@ The listener exclusively reads the calibrated keyboard interface and forwards in
 
 Focus matching uses the X11/XWayland window class and owning executable. Dial presses/releases are paired even when focus or modifiers change mid-gesture. Repeated events are suppressed and actions are limited to one per 120 ms. The listener waits for held keys to be released before attaching, handles input resynchronization and reconnects, and releases forwarded keys when stopping.
 
-The app’s model control shows the selected reasoning level. After a dial change, the listener sends a hover-only event to that control to show the app’s native hint; it does not move the physical pointer, click, or press Enter. This is best effort for the standard bottom-composer layout with the sidebar open. A different layout may show only the updated effort label. No desktop notifications are generated.
+The app’s model/effort label shows the selected reasoning level. The graphical effort popup is **not opened automatically**: open it with the app’s own button when available. The integration does not move the pointer, synthesize hover/click events, or generate desktop notifications.
 
 ## Tests
 
@@ -136,3 +136,5 @@ Hardware validation additionally exercised real Linux virtual-device forwarding,
 ## Removed click experiment
 
 Click-to-select, OCR, and desktop notifications have been removed. Clicking the knob retains the keyboard’s ordinary mute behavior. Upgrading removes this package’s old Ctrl+Shift+F10 binding while preserving unrelated shortcuts.
+
+The attempted coordinate-based native hover hint was removed after it failed in actual use. The native graphical popup is not a verified feature of this integration.
