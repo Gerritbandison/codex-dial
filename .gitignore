@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.venv/
+*.log
+*.pid
+.env
+.env.*
+keybindings.before.json
+keybindings-existed.txt
+install-state.json

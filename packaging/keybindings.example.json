@@ -1,0 +1,4 @@
+[
+  {"command": "composer.increaseReasoningEffort", "key": "Ctrl+Shift+F11"},
+  {"command": "composer.decreaseReasoningEffort", "key": "Ctrl+Shift+F12"}
+]
