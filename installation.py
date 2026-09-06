@@ -9,7 +9,7 @@ BINDINGS = [
 ]
 RETIRED_BINDING = {'command': 'composer.openModelPicker', 'key': 'Ctrl+Shift+F10'}
 
-FILES = ['LICENSE', 'dial_core.py', 'dial_daemon.py', 'installation.py', 'install.py', 'uninstall.py', 'README.md', 'requirements.txt']
+FILES = ['native_effort.py', 'assets/microphone.png', 'assets/effort-chevron.png', 'LICENSE', 'dial_core.py', 'dial_daemon.py', 'installation.py', 'install.py', 'uninstall.py', 'README.md', 'requirements.txt']
 
 
 def read_bindings(path):

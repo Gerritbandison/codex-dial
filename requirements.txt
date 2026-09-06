@@ -1,2 +1,4 @@
 evdev==1.9.3
 python-xlib==0.33
+numpy>=1.24
+Pillow>=10

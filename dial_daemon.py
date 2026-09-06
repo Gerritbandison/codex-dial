@@ -111,19 +111,25 @@ class Hotkeys:
         self.focus = focus
         self.output = UInput({E.EV_KEY: [E.KEY_LEFTCTRL, E.KEY_LEFTSHIFT, E.KEY_F11, E.KEY_F12]}, name='Codex Dial commands')
         self.audio = []
+        self.feedback = None
+        self.last_feedback_error = 0
 
     def send(self, action):
         self.audio = [child for child in self.audio if child.poll() is None]
-        if action.startswith('volume-'):
+        if action.startswith('volume-') or action == 'mute':
             try:
                 self.audio.append(subprocess.Popen(
-                    ['wpctl', 'set-volume', '--limit', '1.0', '@DEFAULT_AUDIO_SINK@', '2%+' if action == 'volume-up' else '2%-'],
+                    (['wpctl', 'set-mute', '@DEFAULT_AUDIO_SINK@', 'toggle'] if action == 'mute' else
+                     ['wpctl', 'set-volume', '--limit', '1.0', '@DEFAULT_AUDIO_SINK@', '2%+' if action == 'volume-up' else '2%-']),
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
                 LOG.info('Requested %s', action)
             except OSError as error:
                 LOG.error('Cannot change volume: %s', error)
             return
         if not self.focus.active():
+            return
+        if action == 'effort-panel':
+            self.show_effort_panel()
             return
         key = E.KEY_F12 if action == 'decrease' else E.KEY_F11
         try:
@@ -137,6 +143,19 @@ class Hotkeys:
             self.output.write(E.EV_KEY, E.KEY_LEFTCTRL, 0)
             self.output.syn()
         LOG.info('Requested %s reasoning effort', action)
+        self.show_effort_panel()
+
+    def show_effort_panel(self):
+        try:
+            if self.feedback is None:
+                from native_effort import NativeEffort
+                self.feedback = NativeEffort(self.focus)
+            return self.feedback.show()
+        except Exception as error:
+            if time.monotonic() - self.last_feedback_error > 5:
+                LOG.warning('Native effort display unavailable: %s', error)
+                self.last_feedback_error = time.monotonic()
+            return False
 
     def close(self):
         self.output.close()
@@ -227,7 +246,7 @@ def run(args):
                                 ctrl = bool(held & CTRL)
                                 forward, action = router.key(kbd.device.path, event.code, event.value,
                                     ctrl=ctrl, modified=bool(held & OTHER_MODIFIERS),
-                                    focused=event.code in (E.KEY_VOLUMEUP, E.KEY_VOLUMEDOWN) and focus.active(), now=time.monotonic())
+                                    focused=event.code in (E.KEY_MUTE, E.KEY_VOLUMEUP, E.KEY_VOLUMEDOWN) and focus.active(), now=time.monotonic())
                             if forward:
                                 kbd.forward(event)
                             if action:

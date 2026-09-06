@@ -4,11 +4,14 @@ from dial_core import DialRouter, is_target_window
 
 
 class DialTests(unittest.TestCase):
-    def test_click_is_always_passed_to_normal_keyboard_behavior(self):
-        for ctrl in (False, True):
-            r = DialRouter()
-            self.assertEqual(r.key("kbd", 113, 1, ctrl=ctrl, focused=True, now=1), (True, None))
-            self.assertEqual(r.key("kbd", 113, 0, ctrl=ctrl, focused=True, now=2), (True, None))
+    def test_click_opens_effort_panel_only_in_target_app(self):
+        r = DialRouter()
+        self.assertEqual(r.key('kbd',113,1,ctrl=False,focused=True,now=1),(False,'effort-panel'))
+        self.assertEqual(r.key('kbd',113,0,ctrl=False,focused=False,now=2),(False,None))
+        self.assertEqual(r.key('kbd',113,1,ctrl=False,focused=False,now=3),(True,None))
+
+    def test_ctrl_click_mutes(self):
+        self.assertEqual(DialRouter().key('kbd',113,1,ctrl=True,focused=True,now=1),(False,'mute'))
 
     def test_ctrl_volume_uses_audio_action_and_consumes_release(self):
         r = DialRouter()

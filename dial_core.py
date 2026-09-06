@@ -8,7 +8,7 @@ class DialRouter:
         self.presses = {}
 
     def key(self, device, code, value, *, ctrl, focused, now, modified=False):
-        if code not in (114, 115):
+        if code not in (113, 114, 115):
             return True, None
         identity = (device, code)
         if value == 0:
@@ -26,7 +26,9 @@ class DialRouter:
                 return False, None
             self.last_action = now
             if ctrl:
-                return False, 'volume-up' if code == 115 else 'volume-down'
+                return False, 'mute' if code == 113 else ('volume-up' if code == 115 else 'volume-down')
+            if code == 113:
+                return False, 'effort-panel'
             return False, 'decrease' if code == 115 else 'increase'
         return True, None
 

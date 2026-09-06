@@ -14,7 +14,8 @@ Leave the keyboard dial in its normal **volume mode**. Use Fn+F12 to cycle back 
 | Counterclockwise | Higher reasoning effort; favor deeper reasoning | Normal volume down |
 | Ctrl + clockwise | Volume up 2% | Volume up 2% |
 | Ctrl + counterclockwise | Volume down 2% | Volume down 2% |
-| Dial press | Existing mute behavior | Existing mute behavior |
+| Dial press | Open the native effort slider | Normal mute/unmute |
+| Ctrl + press | Mute/unmute | Mute/unmute |
 
 The selected model stays the same. Reasoning changes apply to the composer's setting for subsequent messages, not a response already generating. Available levels are determined by the selected model. This does not toggle Fast mode or change service tiers. Ctrl-volume uses the default audio sink and caps volume at 100%.
 
@@ -32,7 +33,7 @@ Requires Python 3.10+, systemd user services, evdev/uinput access, WirePlumber (
 ## Install on Fedora / Nobara
 
 ```bash
-sudo dnf install git python3 python3-evdev python3-xlib wireplumber
+sudo dnf install git python3 python3-evdev python3-xlib python3-numpy python3-pillow wireplumber
 git clone https://github.com/Gerritbandison/codex-dial.git
 cd codex-dial
 python3 install.py --check
@@ -116,13 +117,15 @@ The listener exclusively reads the calibrated keyboard interface and forwards in
 
 Focus matching uses the X11/XWayland window class and owning executable. Dial presses/releases are paired even when focus or modifiers change mid-gesture. Repeated events are suppressed and actions are limited to one per 120 ms. The listener waits for held keys to be released before attaching, handles input resynchronization and reconnects, and releases forwarded keys when stopping.
 
-The app’s model/effort label shows the selected reasoning level. The graphical effort popup is **not opened automatically**: open it with the app’s own button when available. The integration does not move the pointer, synthesize hover/click events, or generate desktop notifications.
+The small native effort slider opens when the dial is pressed or rotated in a supported ChatGPT/Codex window. Rotation keeps changing reasoning effort while the slider stays visible. This targets the actual microphone/chevron/send-control icon group in the bottom composer, not guessed window coordinates. It sends a click to the matched effort button without moving the physical pointer. It never sends Enter, navigates a model list, or uses OCR. Already-open sliders are detected so repeated turns do not toggle the panel closed.
+
+The icon match was verified at the current default app scale and dark appearance, including a split-pane screenshot. A different theme, zoom, icon layout, hidden composer, or multiple matching composers can cause it to do nothing; effort shortcuts still work. This is a visual adapter, not an official app API. Matching runs locally in memory, normally only every half-second during dial use. No screenshots or recognized text are written, logged, or uploaded, and no desktop notifications are generated.
 
 ## Tests
 
 ```bash
 python3 -m unittest discover -s tests -v
-python3 -m compileall -q dial_core.py dial_daemon.py installation.py install.py uninstall.py
+python3 -m compileall -q dial_core.py dial_daemon.py native_effort.py installation.py install.py uninstall.py
 ```
 
 The automated suite covers gesture routing, modifiers, focus changes, held-key releases, throttling, shortcut conflicts, repeat installation, isolated file installation, and shortcut removal. Tests do not capture the real keyboard or modify the current user's app settings. CI runs the suite on Python 3.10, 3.12, and 3.14.
@@ -133,8 +136,6 @@ Hardware validation additionally exercised real Linux virtual-device forwarding,
 
 [MIT](LICENSE) © 2026 Gerritbandison.
 
-## Removed click experiment
+## Removed model-selection experiment
 
-Click-to-select, OCR, and desktop notifications have been removed. Clicking the knob retains the keyboard’s ordinary mute behavior. Upgrading removes this package’s old Ctrl+Shift+F10 binding while preserving unrelated shortcuts.
-
-The attempted coordinate-based native hover hint was removed after it failed in actual use. The native graphical popup is not a verified feature of this integration.
+The earlier click → browse models → Enter workflow remains removed. The new press action only opens the small native **effort slider** shown beside the composer. It does not select a model or submit a message. Upgrading removes this package’s old Ctrl+Shift+F10 binding while preserving unrelated shortcuts.

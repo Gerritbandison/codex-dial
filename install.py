@@ -15,7 +15,7 @@ def preflight():
         raise ValueError('Run this installer as your desktop user, without sudo.')
     if sys.platform != 'linux':
         raise ValueError('This integration requires Linux.')
-    for module in ['evdev', 'Xlib']:
+    for module in ['evdev', 'Xlib', 'numpy', 'PIL']:
         if importlib.util.find_spec(module) is None:
             raise ValueError(f'Missing Python module {module}. Install the Fedora dependencies listed in README.md.')
     for program in ['wpctl', 'systemctl']:
