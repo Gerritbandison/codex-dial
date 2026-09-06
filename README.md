@@ -10,8 +10,8 @@ Leave the keyboard dial in its normal **volume mode**. Use Fn+F12 to cycle back 
 
 | Gesture | ChatGPT/Codex focused | Other applications |
 | --- | --- | --- |
-| Clockwise | Lower reasoning effort; favor faster replies | Normal volume up |
-| Counterclockwise | Higher reasoning effort; favor deeper reasoning | Normal volume down |
+| Clockwise | Higher reasoning effort; favor deeper reasoning | Normal volume up |
+| Counterclockwise | Lower reasoning effort; favor faster replies | Normal volume down |
 | Ctrl + clockwise | Volume up 2% | Volume up 2% |
 | Ctrl + counterclockwise | Volume down 2% | Volume down 2% |
 | Dial press | Open the native effort slider | Normal mute/unmute |

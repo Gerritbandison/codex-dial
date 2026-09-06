@@ -29,7 +29,7 @@ class DialRouter:
                 return False, 'mute' if code == 113 else ('volume-up' if code == 115 else 'volume-down')
             if code == 113:
                 return False, 'effort-panel'
-            return False, 'decrease' if code == 115 else 'increase'
+            return False, 'increase' if code == 115 else 'decrease'
         return True, None
 
     def forget(self, device):

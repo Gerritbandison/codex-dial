@@ -24,13 +24,13 @@ class DialTests(unittest.TestCase):
     def test_other_modifiers_do_not_change_effort(self):
         self.assertEqual(DialRouter().key('kbd', 114, 1, ctrl=False, modified=True, focused=True, now=1), (True, None))
 
-    def test_plain_clockwise_requests_lower_effort(self):
+    def test_plain_clockwise_requests_higher_effort(self):
         r = DialRouter()
-        self.assertEqual(r.key('kbd', 115, 1, ctrl=False, focused=True, now=1), (False, 'decrease'))
+        self.assertEqual(r.key('kbd', 115, 1, ctrl=False, focused=True, now=1), (False, 'increase'))
 
-    def test_plain_counterclockwise_requests_higher_effort(self):
+    def test_plain_counterclockwise_requests_lower_effort(self):
         r = DialRouter()
-        self.assertEqual(r.key('kbd', 114, 1, ctrl=False, focused=True, now=1), (False, 'increase'))
+        self.assertEqual(r.key('kbd', 114, 1, ctrl=False, focused=True, now=1), (False, 'decrease'))
 
     def test_other_apps_keep_ctrl_volume_unchanged(self):
         r = DialRouter()
@@ -52,7 +52,7 @@ class DialTests(unittest.TestCase):
         r.key('kbd', 115, 0, ctrl=False, focused=True, now=1.01)
         self.assertEqual(r.key('kbd', 115, 1, ctrl=False, focused=True, now=1.02), (False, None))
         r.key('kbd', 115, 0, ctrl=False, focused=True, now=1.03)
-        self.assertEqual(r.key('kbd', 115, 1, ctrl=False, focused=True, now=1.3), (False, 'decrease'))
+        self.assertEqual(r.key('kbd', 115, 1, ctrl=False, focused=True, now=1.3), (False, 'increase'))
 
     def test_non_dial_keys_always_pass_through(self):
         self.assertEqual(DialRouter().key('kbd', 30, 1, ctrl=False, focused=True, now=1), (True, None))
