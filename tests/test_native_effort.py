@@ -1,8 +1,8 @@
 from pathlib import Path
 import unittest
 import numpy as np
-from PIL import Image, ImageDraw
-from native_effort import find_control, panel_visible
+from PIL import Image, ImageDraw, ImageOps
+from native_effort import find_control, find_scaled_control, panel_visible
 
 
 class NativeEffortTests(unittest.TestCase):
@@ -19,6 +19,30 @@ class NativeEffortTests(unittest.TestCase):
         draw.rectangle((x-5,y-5,x+5,y+5), fill=(45,45,45))
         image.paste(self.mic_image,(x-43,y-10))
         image.paste(self.arrow_image,(x-74,y-6))
+
+    def test_light_theme_control_is_detected(self):
+        image = Image.new('RGB',(900,500),(45,45,45))
+        self.add_control(image,700,450)
+        image = ImageOps.invert(image)
+        self.assertEqual(find_control(image,self.mic,self.arrow),(700,450))
+
+    def test_zoomed_controls_in_both_themes(self):
+        for light in (False, True):
+            for scale in (1.2, 1.5):
+                with self.subTest(light=light, scale=scale):
+                    image = Image.new('RGB',(900,500),(45,45,45))
+                    self.add_control(image,700,450)
+                    if light:
+                        image = ImageOps.invert(image)
+                    image = image.resize((round(900*scale),round(500*scale)),Image.Resampling.LANCZOS)
+                    control = find_scaled_control(image,self.mic,self.arrow,preferred=scale)
+                    self.assertIsNotNone(control)
+                    self.assertAlmostEqual(control[0],700*scale,delta=2)
+                    self.assertAlmostEqual(control[1],450*scale,delta=2)
+
+    def test_light_background_is_not_an_open_slider(self):
+        image = Image.new('RGB',(900,500),'white')
+        self.assertFalse(panel_visible(image,(700,450)))
 
     def test_finds_verified_control_at_different_positions(self):
         for x in (400,700):
