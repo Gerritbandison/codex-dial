@@ -101,7 +101,7 @@ class NativeEffort:
         self.last_attempt = float('-inf')
         self.scale = 1.0
 
-    def show(self):
+    def show(self, toggle=False):
         from Xlib import X, protocol
         from PIL import Image
         if time.monotonic() - self.last_attempt < .5 or not self.focus.active():
@@ -120,7 +120,7 @@ class NativeEffort:
         if control is None:
             return False
         self.scale = control[2]
-        if panel_visible(image, control):
+        if not toggle and panel_visible(image, control):
             return True
         if not self.focus.active() or root.get_full_property(display.intern_atom('_NET_ACTIVE_WINDOW'), X.AnyPropertyType).value[0] != window.id:
             return False

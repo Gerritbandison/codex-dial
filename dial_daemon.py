@@ -129,7 +129,7 @@ class Hotkeys:
         if not self.focus.active():
             return
         if action == 'effort-panel':
-            self.show_effort_panel()
+            self.show_effort_panel(toggle=True)
             return
         key = E.KEY_F12 if action == 'decrease' else E.KEY_F11
         try:
@@ -145,12 +145,12 @@ class Hotkeys:
         LOG.info('Requested %s reasoning effort', action)
         self.show_effort_panel()
 
-    def show_effort_panel(self):
+    def show_effort_panel(self, toggle=False):
         try:
             if self.feedback is None:
                 from native_effort import NativeEffort
                 self.feedback = NativeEffort(self.focus)
-            return self.feedback.show()
+            return self.feedback.show(toggle=toggle)
         except Exception as error:
             if time.monotonic() - self.last_feedback_error > 5:
                 LOG.warning('Native effort display unavailable: %s', error)
